@@ -1,10 +1,9 @@
 import { ChangelogList } from '@/components/ChangelogList'
 import { Header } from '@/components/Header'
-import db from '@/lib/db'
+import dbHelpers from '@/lib/db'
 
 async function getChangelogs() {
-  const stmt = db.prepare('SELECT * FROM changelogs ORDER BY generatedAt DESC');
-  return stmt.all();
+  return await dbHelpers.getAllChangelogs();
 }
 
 export default async function Home() {
