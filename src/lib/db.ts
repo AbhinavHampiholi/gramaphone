@@ -76,7 +76,7 @@ const dbHelpers = {
       RETURNING id;
     `;
     
-    return result.rowCount > 0;
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 };
 
