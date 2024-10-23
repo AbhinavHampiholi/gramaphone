@@ -1,4 +1,5 @@
 import { sql } from '@vercel/postgres';
+import type { QueryResult } from '@vercel/postgres';
 
 interface Changelog {
   id: string;
@@ -37,7 +38,7 @@ initializeDb();
 
 const dbHelpers = {
   async saveChangelog(changelog: Omit<Changelog, 'id' | 'createdAt'>): Promise<string> {
-    const result = await sql`
+    const result = await sql<{ id: string }>`
       INSERT INTO changelogs (repoUrl, content, generatedAt, periodStart, periodEnd)
       VALUES (
         ${changelog.repoUrl},
@@ -53,8 +54,16 @@ const dbHelpers = {
   },
 
   async getAllChangelogs(): Promise<Changelog[]> {
-    const result = await sql`
-      SELECT * FROM changelogs 
+    const result = await sql<Changelog>`
+      SELECT 
+        id,
+        repoUrl,
+        content,
+        generatedAt::text,
+        periodStart::text,
+        periodEnd::text,
+        createdAt::text
+      FROM changelogs 
       ORDER BY generatedAt DESC;
     `;
     
