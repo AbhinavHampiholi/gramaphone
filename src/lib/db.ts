@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv'
+import { sql } from '@vercel/postgres';
 
 interface Changelog {
   id: string;
@@ -10,55 +10,65 @@ interface Changelog {
   createdAt: string;
 }
 
-// Helper functions for the database
+// Initialize the database table
+export async function initializeDb() {
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS changelogs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        repoUrl TEXT NOT NULL,
+        content TEXT NOT NULL,
+        generatedAt TIMESTAMP WITH TIME ZONE NOT NULL,
+        periodStart TIMESTAMP WITH TIME ZONE NOT NULL,
+        periodEnd TIMESTAMP WITH TIME ZONE NOT NULL,
+        createdAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_changelogs_repo ON changelogs(repoUrl);
+      CREATE INDEX IF NOT EXISTS idx_changelogs_dates ON changelogs(generatedAt);
+    `;
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+  }
+}
+
+// Initialize the database on module load
+initializeDb();
+
 const dbHelpers = {
   async saveChangelog(changelog: Omit<Changelog, 'id' | 'createdAt'>): Promise<string> {
-    const id = crypto.randomUUID();
-    const createdAt = new Date().toISOString();
+    const result = await sql`
+      INSERT INTO changelogs (repoUrl, content, generatedAt, periodStart, periodEnd)
+      VALUES (
+        ${changelog.repoUrl},
+        ${changelog.content},
+        ${changelog.generatedAt},
+        ${changelog.periodStart},
+        ${changelog.periodEnd}
+      )
+      RETURNING id;
+    `;
     
-    const fullChangelog = {
-      ...changelog,
-      id,
-      createdAt
-    };
-
-    // Store the full changelog
-    await kv.hset(`changelog:${id}`, fullChangelog);
-    
-    // Add to the repo's changelog list
-    await kv.zadd(`repo:${changelog.repoUrl}`, {
-      score: Date.now(),
-      member: id
-    });
-
-    return id;
+    return result.rows[0].id;
   },
 
   async getAllChangelogs(): Promise<Changelog[]> {
-    const pattern = 'changelog:*';
-    const keys = await kv.keys(pattern);
+    const result = await sql`
+      SELECT * FROM changelogs 
+      ORDER BY generatedAt DESC;
+    `;
     
-    if (keys.length === 0) return [];
-
-    const changelogs = await Promise.all(
-      keys.map(key => kv.hgetall(key))
-    );
-
-    return changelogs.filter(Boolean) as Changelog[];
+    return result.rows;
   },
 
   async deleteChangelog(id: string): Promise<boolean> {
-    const changelog = await kv.hgetall(`changelog:${id}`) as Changelog | null;
+    const result = await sql`
+      DELETE FROM changelogs 
+      WHERE id = ${id}
+      RETURNING id;
+    `;
     
-    if (!changelog) return false;
-
-    // Remove from both the main storage and the repo index
-    await Promise.all([
-      kv.del(`changelog:${id}`),
-      kv.zrem(`repo:${changelog.repoUrl}`, id)
-    ]);
-
-    return true;
+    return result.rowCount > 0;
   }
 };
 
