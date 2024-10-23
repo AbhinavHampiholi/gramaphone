@@ -73,7 +73,7 @@ const MarkdownComponents: Components = {
       {children}
     </a>
   ),
-  code: ({ node, inline, className, children, ...props }: CodeBlockProps) => {
+  code: ({ inline, className, children, ...props }: CodeBlockProps) => {
     if (inline) {
       return (
         <code 
