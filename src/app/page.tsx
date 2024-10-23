@@ -3,7 +3,12 @@ import { Header } from '@/components/Header'
 import dbHelpers from '@/lib/db'
 
 async function getChangelogs() {
-  return await dbHelpers.getAllChangelogs();
+  try {
+    return await dbHelpers.getAllChangelogs();
+  } catch (error) {
+    console.error('Error fetching changelogs:', error);
+    return [];
+  }
 }
 
 export default async function Home() {

@@ -13,6 +13,7 @@ interface Changelog {
 // Initialize the database table
 export async function initializeDb() {
   try {
+    // Create table
     await sql`
       CREATE TABLE IF NOT EXISTS changelogs (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -22,18 +23,26 @@ export async function initializeDb() {
         periodStart TIMESTAMP WITH TIME ZONE NOT NULL,
         periodEnd TIMESTAMP WITH TIME ZONE NOT NULL,
         createdAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_changelogs_repo ON changelogs(repoUrl);
-      CREATE INDEX IF NOT EXISTS idx_changelogs_dates ON changelogs(generatedAt);
+      )
     `;
+
+    // Create repo index
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_changelogs_repo ON changelogs(repoUrl)
+    `;
+
+    // Create dates index
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_changelogs_dates ON changelogs(generatedAt)
+    `;
+    
   } catch (error) {
     console.error('Failed to initialize database:', error);
   }
 }
 
 // Initialize the database on module load
-initializeDb();
+initializeDb().catch(console.error);
 
 const dbHelpers = {
   async saveChangelog(changelog: Omit<Changelog, 'id' | 'createdAt'>): Promise<string> {
