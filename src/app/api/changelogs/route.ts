@@ -11,7 +11,7 @@ const allowedOrigins = [
 
 // CORS headers configuration
 const corsHeaders = {
-    'Access-Control-Allow-Origin': allowedOrigins.includes(origin || '') ? origin : allowedOrigins[0],
+    'Access-Control-Allow-Origin': allowedOrigins[2],
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
 };
