@@ -14,6 +14,32 @@ export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
 }
 
+
+export async function DELETE(request: Request) {
+    try {
+      const { searchParams } = new URL(request.url);
+      const id = searchParams.get('id');
+  
+      if (!id) {
+        return NextResponse.json(
+          { error: 'Changelog ID is required' },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+  
+      const stmt = db.prepare('DELETE FROM changelogs WHERE id = ?');
+      stmt.run(id);
+  
+      return NextResponse.json({ success: true }, { headers: corsHeaders });
+    } catch (error) {
+      console.error('Error deleting changelog:', error);
+      return NextResponse.json(
+        { error: 'Failed to delete changelog' },
+        { status: 500, headers: corsHeaders }
+      );
+    }
+  }
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();

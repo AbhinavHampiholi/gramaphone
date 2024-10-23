@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { GitBranch, ChevronDown, ChevronRight, CalendarRange, X } from "lucide-react"
+import { GitBranch, ChevronDown, ChevronRight, CalendarRange, X, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Collapsible,
@@ -9,7 +9,19 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import ReactMarkdown from 'react-markdown'
+import { useRouter } from 'next/navigation'
 
 interface Changelog {
   id: string
@@ -24,8 +36,36 @@ interface ChangelogListProps {
   changelogs: Changelog[]
 }
 
-export function ChangelogList({ changelogs }: ChangelogListProps) {
+export function ChangelogList({ changelogs: initialChangelogs }: ChangelogListProps) {
+  const [changelogs, setChangelogs] = useState(initialChangelogs)
   const [selectedChangelog, setSelectedChangelog] = useState<Changelog | null>(null)
+  const router = useRouter()
+
+  const deleteChangelog = async (id: string) => {
+    try {
+      const response = await fetch(`/api/changelogs?id=${id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete changelog')
+      }
+
+      // Remove the changelog from state
+      setChangelogs(prev => prev.filter(changelog => changelog.id !== id))
+      
+      // If the deleted changelog was selected, clear the selection
+      if (selectedChangelog?.id === id) {
+        setSelectedChangelog(null)
+      }
+
+      // Refresh the page data
+      router.refresh()
+    } catch (error) {
+      console.error('Error deleting changelog:', error)
+      // You might want to show an error message to the user here
+    }
+  }
 
   // Group changelogs by repository
   const repositories = changelogs.reduce((acc, changelog) => {
@@ -36,6 +76,38 @@ export function ChangelogList({ changelogs }: ChangelogListProps) {
     repos[changelog.repoUrl].push(changelog)
     return repos
   }, {} as Record<string, Changelog[]>)
+
+  const DeleteButton = ({ id }: { id: string }) => (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Changelog</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete this changelog.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={() => deleteChangelog(id)}
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
 
   return (
     <div className="grid grid-cols-12 gap-4">
@@ -61,19 +133,24 @@ export function ChangelogList({ changelogs }: ChangelogListProps) {
                     {repoChangelogs
                       .sort((a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime())
                       .map((changelog) => (
-                        <button
+                        <div
                           key={changelog.id}
-                          onClick={() => setSelectedChangelog(changelog)}
-                          className={`w-full text-left p-2 rounded-lg flex items-center gap-2 hover:bg-accent ${
-                            selectedChangelog?.id === changelog.id ? 'bg-accent' : ''
-                          }`}
+                          className="flex items-center justify-between group"
                         >
-                          <CalendarRange className="h-4 w-4" />
-                          <span className="text-sm">
-                            {new Date(changelog.periodStart).toLocaleDateString()} to{' '}
-                            {new Date(changelog.periodEnd).toLocaleDateString()}
-                          </span>
-                        </button>
+                          <button
+                            onClick={() => setSelectedChangelog(changelog)}
+                            className={`flex-1 text-left p-2 rounded-lg flex items-center gap-2 hover:bg-accent ${
+                              selectedChangelog?.id === changelog.id ? 'bg-accent' : ''
+                            }`}
+                          >
+                            <CalendarRange className="h-4 w-4" />
+                            <span className="text-sm">
+                              {new Date(changelog.periodStart).toLocaleDateString()} to{' '}
+                              {new Date(changelog.periodEnd).toLocaleDateString()}
+                            </span>
+                          </button>
+                          <DeleteButton id={changelog.id} />
+                        </div>
                       ))}
                   </div>
                 </CollapsibleContent>
