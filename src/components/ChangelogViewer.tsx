@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import 'github-markdown-css';
 import 'highlight.js/styles/github-dark.css';
+import type { Components } from 'react-markdown';
 
 interface Changelog {
   id: string;
@@ -17,47 +18,90 @@ interface Changelog {
   periodEnd: string;
 }
 
-// Custom components for ReactMarkdown
-const MarkdownComponents = {
-  h1: (props: any) => (
-    <h1 className="text-2xl font-bold mb-4 mt-6 pb-2 border-b" {...props} />
+interface MarkdownProps extends React.HTMLAttributes<HTMLElement> {
+  children?: React.ReactNode;
+}
+
+interface CodeBlockProps extends MarkdownProps {
+  inline?: boolean;
+  className?: string;
+}
+
+// Custom components for ReactMarkdown with proper typing
+const MarkdownComponents: Components = {
+  h1: ({ children, ...props }: MarkdownProps) => (
+    <h1 className="text-2xl font-bold mb-4 mt-6 pb-2 border-b" {...props}>
+      {children}
+    </h1>
   ),
-  h2: (props: any) => (
-    <h2 className="text-xl font-semibold mb-3 mt-5 text-primary" {...props} />
+  h2: ({ children, ...props }: MarkdownProps) => (
+    <h2 className="text-xl font-semibold mb-3 mt-5 text-primary" {...props}>
+      {children}
+    </h2>
   ),
-  h3: (props: any) => (
-    <h3 className="text-lg font-medium mb-2 mt-4 text-primary/80" {...props} />
+  h3: ({ children, ...props }: MarkdownProps) => (
+    <h3 className="text-lg font-medium mb-2 mt-4 text-primary/80" {...props}>
+      {children}
+    </h3>
   ),
-  p: (props: any) => (
-    <p className="mb-4 leading-relaxed" {...props} />
+  p: ({ children, ...props }: MarkdownProps) => (
+    <p className="mb-4 leading-relaxed" {...props}>
+      {children}
+    </p>
   ),
-  ul: (props: any) => (
-    <ul className="mb-4 ml-4 space-y-2" {...props} />
+  ul: ({ children, ...props }: MarkdownProps) => (
+    <ul className="mb-4 ml-4 space-y-2" {...props}>
+      {children}
+    </ul>
   ),
-  li: (props: any) => (
-    <li className="relative pl-6 before:content-['•'] before:absolute before:left-1 before:text-primary" {...props} />
+  li: ({ children, ...props }: MarkdownProps) => (
+    <li 
+      className="relative pl-6 before:content-['•'] before:absolute before:left-1 before:text-primary" 
+      {...props}
+    >
+      {children}
+    </li>
   ),
-  a: (props: any) => (
-    <a className="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />
+  a: ({ children, href, ...props }: MarkdownProps & { href?: string }) => (
+    <a 
+      className="text-blue-500 hover:underline" 
+      href={href}
+      target="_blank" 
+      rel="noopener noreferrer" 
+      {...props}
+    >
+      {children}
+    </a>
   ),
-  code: ({ node, inline, className, children, ...props }: any) => {
+  code: ({ node, inline, className, children, ...props }: CodeBlockProps) => {
     if (inline) {
       return (
-        <code className="px-1.5 py-0.5 rounded-md bg-muted font-mono text-sm" {...props}>
+        <code 
+          className="px-1.5 py-0.5 rounded-md bg-muted font-mono text-sm" 
+          {...props}
+        >
           {children}
         </code>
       );
     }
     return (
-      <code className={`${className} block p-4 rounded-lg bg-muted font-mono text-sm overflow-x-auto`} {...props}>
+      <code 
+        className={`${className} block p-4 rounded-lg bg-muted font-mono text-sm overflow-x-auto`} 
+        {...props}
+      >
         {children}
       </code>
     );
   },
-  blockquote: (props: any) => (
-    <blockquote className="border-l-4 border-primary/20 pl-4 italic my-4" {...props} />
+  blockquote: ({ children, ...props }: MarkdownProps) => (
+    <blockquote 
+      className="border-l-4 border-primary/20 pl-4 italic my-4" 
+      {...props}
+    >
+      {children}
+    </blockquote>
   ),
-  hr: (props: any) => (
+  hr: (props: MarkdownProps) => (
     <hr className="my-6 border-muted" {...props} />
   ),
 };
@@ -67,14 +111,14 @@ export default function ChangelogViewer() {
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchChangelogs();
+    void fetchChangelogs();
   }, []);
 
   async function fetchChangelogs() {
     try {
       const response = await fetch('/api/changelogs');
       if (!response.ok) throw new Error('Failed to fetch changelogs');
-      const data = await response.json();
+      const data = await response.json() as Changelog[];
       setChangelogs(data);
     } catch (error) {
       console.error('Error fetching changelogs:', error);
