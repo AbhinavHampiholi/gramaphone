@@ -1,8 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { GitBranch, ChevronDown, CalendarRange, X, RefreshCw } from "lucide-react";
+import { GitBranch, ChevronDown, CalendarRange, X, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Collapsible,
   CollapsibleContent,
@@ -20,6 +31,7 @@ export function ChangelogList({ initialChangelogs }: ChangelogListProps) {
   const [changelogs, setChangelogs] = useState<Changelog[]>(initialChangelogs);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const refreshChangelogs = async () => {
     setIsRefreshing(true);
@@ -39,7 +51,29 @@ export function ChangelogList({ initialChangelogs }: ChangelogListProps) {
     }
   };
 
-  // Auto-refresh when component mounts
+  const deleteChangelog = async (id: string) => {
+    setIsDeleting(id);
+    try {
+      const response = await fetch(`/api/changelogs?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete changelog');
+      }
+
+      // Remove from local state
+      setChangelogs(prev => prev.filter(changelog => changelog.id !== id));
+      if (selectedRepo === id) {
+        setSelectedRepo(null);
+      }
+    } catch (error) {
+      console.error('Error deleting changelog:', error);
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
   useEffect(() => {
     refreshChangelogs();
   }, []);
@@ -56,7 +90,6 @@ export function ChangelogList({ initialChangelogs }: ChangelogListProps) {
 
   return (
     <div className="space-y-4">
-      {/* Refresh Button */}
       <div className="flex justify-end">
         <Button
           variant="outline"
@@ -70,7 +103,6 @@ export function ChangelogList({ initialChangelogs }: ChangelogListProps) {
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        {/* Repository List */}
         <div className="col-span-3 border-r">
           <ScrollArea className="h-[calc(100vh-8rem)]">
             <div className="pr-4 space-y-4">
@@ -92,19 +124,49 @@ export function ChangelogList({ initialChangelogs }: ChangelogListProps) {
                       {repoChangelogs
                         .sort((a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime())
                         .map((changelog) => (
-                          <button
-                            key={changelog.id}
-                            onClick={() => setSelectedRepo(changelog.id)}
-                            className={`w-full text-left p-2 rounded-lg flex items-center gap-2 hover:bg-accent ${
-                              selectedRepo === changelog.id ? 'bg-accent' : ''
-                            }`}
-                          >
-                            <CalendarRange className="h-4 w-4" />
-                            <span className="text-sm">
-                              {new Date(changelog.periodStart).toLocaleDateString()} to{' '}
-                              {new Date(changelog.periodEnd).toLocaleDateString()}
-                            </span>
-                          </button>
+                          <div key={changelog.id} className="flex items-center gap-2">
+                            <button
+                              onClick={() => setSelectedRepo(changelog.id)}
+                              className={`flex-1 text-left p-2 rounded-lg flex items-center gap-2 hover:bg-accent ${
+                                selectedRepo === changelog.id ? 'bg-accent' : ''
+                              }`}
+                            >
+                              <CalendarRange className="h-4 w-4" />
+                              <span className="text-sm">
+                                {new Date(changelog.periodStart).toLocaleDateString()} to{' '}
+                                {new Date(changelog.periodEnd).toLocaleDateString()}
+                              </span>
+                            </button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  disabled={isDeleting === changelog.id}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Changelog</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this changelog? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteChangelog(changelog.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         ))}
                     </div>
                   </CollapsibleContent>
@@ -114,7 +176,7 @@ export function ChangelogList({ initialChangelogs }: ChangelogListProps) {
           </ScrollArea>
         </div>
 
-        {/* Changelog Content */}
+        {/* Rest of the component remains the same */}
         <div className="col-span-9">
           <ScrollArea className="h-[calc(100vh-8rem)]">
             {selectedRepo ? (
