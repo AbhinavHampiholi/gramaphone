@@ -1,5 +1,4 @@
 import { sql } from '@vercel/postgres';
-import type { QueryResult } from '@vercel/postgres';
 
 interface Changelog {
   id: string;
