@@ -4,7 +4,7 @@ import dbHelpers from '@/lib/db';
 // Update CORS headers to be more specific in production
 const corsHeaders = {
   'Access-Control-Allow-Origin': process.env.NODE_ENV === 'production' 
-    ? process.env.ALLOWED_ORIGINS || '*'  // In production, specify allowed origins
+    ? '*'  // For now. TODO: In production, specify allowed origins
     : '*',  // In development, allow all
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key',
