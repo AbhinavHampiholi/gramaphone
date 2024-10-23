@@ -1,31 +1,27 @@
 import { NextResponse } from 'next/server';
 import dbHelpers from '@/lib/db';
 
-// Update CORS headers to be more specific in production
 const corsHeaders = {
-  'Access-Control-Allow-Origin': process.env.NODE_ENV === 'production' 
-    ? '*'  // For now. TODO: In production, specify allowed origins
-    : '*',  // In development, allow all
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
 }
 
-// Add corsHeaders to all responses
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { repoUrl, content, metadata } = body;
 
     const id = await dbHelpers.saveChangelog({
-      repoUrl,
-      content,
-      generatedAt: metadata.generatedAt,
-      periodStart: metadata.period.start,
-      periodEnd: metadata.period.end
+      repourl: repoUrl,              // lowercase for DB
+      content: content,
+      generatedat: metadata.generatedAt,    // lowercase for DB
+      periodstart: metadata.period.start,   // lowercase for DB
+      periodend: metadata.period.end        // lowercase for DB
     });
 
     return NextResponse.json({ id }, { headers: corsHeaders });
@@ -41,7 +37,19 @@ export async function POST(request: Request) {
 export async function GET() {
   try {
     const changelogs = await dbHelpers.getAllChangelogs();
-    return NextResponse.json(changelogs, { headers: corsHeaders });
+    
+    // Transform the data to match the expected format in the frontend
+    const transformedChangelogs = changelogs.map(changelog => ({
+      id: changelog.id,
+      repoUrl: changelog.repourl,
+      content: changelog.content,
+      generatedAt: changelog.generatedat,
+      periodStart: changelog.periodstart,
+      periodEnd: changelog.periodend,
+      createdAt: changelog.createdat
+    }));
+
+    return NextResponse.json(transformedChangelogs, { headers: corsHeaders });
   } catch (error) {
     console.error('Error fetching changelogs:', error);
     return NextResponse.json(

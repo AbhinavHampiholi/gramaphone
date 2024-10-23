@@ -2,38 +2,38 @@ import { sql } from '@vercel/postgres';
 
 interface Changelog {
   id: string;
-  repoUrl: string;
+  repourl: string;  // lowercase to match DB
   content: string;
-  generatedAt: string;
-  periodStart: string;
-  periodEnd: string;
-  createdAt: string;
+  generatedat: string;  // lowercase to match DB
+  periodstart: string;  // lowercase to match DB
+  periodend: string;    // lowercase to match DB
+  createdat: string;    // lowercase to match DB
 }
 
 // Initialize the database table
 export async function initializeDb() {
   try {
-    // Create table
+    // Create table with lowercase column names
     await sql`
       CREATE TABLE IF NOT EXISTS changelogs (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        repoUrl TEXT NOT NULL,
+        repourl TEXT NOT NULL,
         content TEXT NOT NULL,
-        generatedAt TIMESTAMP WITH TIME ZONE NOT NULL,
-        periodStart TIMESTAMP WITH TIME ZONE NOT NULL,
-        periodEnd TIMESTAMP WITH TIME ZONE NOT NULL,
-        createdAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        generatedat TIMESTAMP WITH TIME ZONE NOT NULL,
+        periodstart TIMESTAMP WITH TIME ZONE NOT NULL,
+        periodend TIMESTAMP WITH TIME ZONE NOT NULL,
+        createdat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `;
 
-    // Create repo index
+    // Create repo index with lowercase column name
     await sql`
-      CREATE INDEX IF NOT EXISTS idx_changelogs_repo ON changelogs(repoUrl)
+      CREATE INDEX IF NOT EXISTS idx_changelogs_repo ON changelogs(repourl)
     `;
 
-    // Create dates index
+    // Create dates index with lowercase column name
     await sql`
-      CREATE INDEX IF NOT EXISTS idx_changelogs_dates ON changelogs(generatedAt)
+      CREATE INDEX IF NOT EXISTS idx_changelogs_dates ON changelogs(generatedat)
     `;
     
   } catch (error) {
@@ -45,15 +45,15 @@ export async function initializeDb() {
 initializeDb().catch(console.error);
 
 const dbHelpers = {
-  async saveChangelog(changelog: Omit<Changelog, 'id' | 'createdAt'>): Promise<string> {
+  async saveChangelog(changelog: Omit<Changelog, 'id' | 'createdat'>): Promise<string> {
     const result = await sql<{ id: string }>`
-      INSERT INTO changelogs (repoUrl, content, generatedAt, periodStart, periodEnd)
+      INSERT INTO changelogs (repourl, content, generatedat, periodstart, periodend)
       VALUES (
-        ${changelog.repoUrl},
+        ${changelog.repourl},
         ${changelog.content},
-        ${changelog.generatedAt},
-        ${changelog.periodStart},
-        ${changelog.periodEnd}
+        ${changelog.generatedat},
+        ${changelog.periodstart},
+        ${changelog.periodend}
       )
       RETURNING id;
     `;
@@ -65,14 +65,14 @@ const dbHelpers = {
     const result = await sql<Changelog>`
       SELECT 
         id,
-        repoUrl,
+        repourl,
         content,
-        generatedAt::text,
-        periodStart::text,
-        periodEnd::text,
-        createdAt::text
+        generatedat::text,
+        periodstart::text,
+        periodend::text,
+        createdat::text
       FROM changelogs 
-      ORDER BY generatedAt DESC;
+      ORDER BY generatedat DESC;
     `;
     
     return result.rows;
