@@ -13,7 +13,7 @@ export function Header() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold">gramophone</h1>
-            <p className="text-sm text-muted-foreground">Changelog Storage & Viewer</p>
+            <p className="text-sm text-muted-foreground">changelog storage & viewer</p>
           </div>
           <Button
             variant="ghost"
