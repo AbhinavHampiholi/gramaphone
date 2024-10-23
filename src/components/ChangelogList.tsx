@@ -22,19 +22,11 @@ import {
 } from "@/components/ui/alert-dialog"
 import ReactMarkdown from 'react-markdown'
 import { useRouter } from 'next/navigation'
-
-interface Changelog {
-  id: string
-  repoUrl: string
-  content: string
-  generatedAt: string
-  periodStart: string
-  periodEnd: string
-}
+import { Changelog } from '@/types/changelog';
 
 interface ChangelogListProps {
-  changelogs: Changelog[]
-}
+    changelogs: Changelog[];
+  }
 
 export function ChangelogList({ changelogs: initialChangelogs }: ChangelogListProps) {
   const [changelogs, setChangelogs] = useState(initialChangelogs)

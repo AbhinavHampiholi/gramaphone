@@ -1,14 +1,11 @@
 import { ChangelogList } from '@/components/ChangelogList'
 import { Header } from '@/components/Header'
 import dbHelpers from '@/lib/db'
+import { transformDbToChangelog } from '@/types/changelog';
 
 async function getChangelogs() {
-  try {
-    return await dbHelpers.getAllChangelogs();
-  } catch (error) {
-    console.error('Error fetching changelogs:', error);
-    return [];
-  }
+  const dbChangelogs = await dbHelpers.getAllChangelogs();
+  return dbChangelogs.map(transformDbToChangelog);
 }
 
 export default async function Home() {

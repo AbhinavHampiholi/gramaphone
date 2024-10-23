@@ -1,19 +1,9 @@
 import { sql } from '@vercel/postgres';
-
-interface Changelog {
-  id: string;
-  repourl: string;  // lowercase to match DB
-  content: string;
-  generatedat: string;  // lowercase to match DB
-  periodstart: string;  // lowercase to match DB
-  periodend: string;    // lowercase to match DB
-  createdat: string;    // lowercase to match DB
-}
+import { ChangelogDB } from '@/types/changelog';
 
 // Initialize the database table
 export async function initializeDb() {
   try {
-    // Create table with lowercase column names
     await sql`
       CREATE TABLE IF NOT EXISTS changelogs (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -26,26 +16,22 @@ export async function initializeDb() {
       )
     `;
 
-    // Create repo index with lowercase column name
     await sql`
       CREATE INDEX IF NOT EXISTS idx_changelogs_repo ON changelogs(repourl)
     `;
 
-    // Create dates index with lowercase column name
     await sql`
       CREATE INDEX IF NOT EXISTS idx_changelogs_dates ON changelogs(generatedat)
     `;
-    
   } catch (error) {
     console.error('Failed to initialize database:', error);
   }
 }
 
-// Initialize the database on module load
 initializeDb().catch(console.error);
 
 const dbHelpers = {
-  async saveChangelog(changelog: Omit<Changelog, 'id' | 'createdat'>): Promise<string> {
+  async saveChangelog(changelog: Omit<ChangelogDB, 'id' | 'createdat'>): Promise<string> {
     const result = await sql<{ id: string }>`
       INSERT INTO changelogs (repourl, content, generatedat, periodstart, periodend)
       VALUES (
@@ -61,8 +47,8 @@ const dbHelpers = {
     return result.rows[0].id;
   },
 
-  async getAllChangelogs(): Promise<Changelog[]> {
-    const result = await sql<Changelog>`
+  async getAllChangelogs(): Promise<ChangelogDB[]> {
+    const result = await sql<ChangelogDB>`
       SELECT 
         id,
         repourl,
