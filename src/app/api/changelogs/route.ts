@@ -1,16 +1,20 @@
 import { NextResponse } from 'next/server';
 import dbHelpers from '@/lib/db';
 
+// Update CORS headers to be more specific in production
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': process.env.NODE_ENV === 'production' 
+    ? process.env.ALLOWED_ORIGINS || '*'  // In production, specify allowed origins
+    : '*',  // In development, allow all
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key',
 };
 
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
 }
 
+// Add corsHeaders to all responses
 export async function POST(request: Request) {
   try {
     const body = await request.json();
