@@ -20,15 +20,18 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "github-markdown-css": "^5.7.0",
     "lucide-react": "^0.453.0",
     "next": "15.0.0",
     "next-themes": "^0.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-markdown": "^9.0.1",
+    "rehype-highlight": "^7.0.1",
     "tailwind-merge": "^2.5.4"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.15",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
