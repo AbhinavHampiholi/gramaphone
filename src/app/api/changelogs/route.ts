@@ -2,11 +2,18 @@ import { NextResponse } from 'next/server';
 import dbHelpers from '@/lib/db';
 import { transformDbToChangelog } from '@/types/changelog';
 
+const allowedOrigins = [
+    'http://localhost:3001',
+    'http://localhost:3000',
+    'https://gramphibian.vercel.app'
+  ];
+  
+
 // CORS headers configuration
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'http://localhost:3001',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+    'Access-Control-Allow-Origin': allowedOrigins.includes(origin || '') ? origin : allowedOrigins[0],
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
 };
 
 // Handle OPTIONS request for CORS preflight
