@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { GitBranch, ChevronDown, ChevronRight, CalendarRange, X, Trash2 } from "lucide-react"
+import { GitBranch, ChevronDown, CalendarRange, X, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Collapsible,
